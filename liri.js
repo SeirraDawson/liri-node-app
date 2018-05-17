@@ -1,11 +1,10 @@
-// per homework instructions
-// require("dotenv").config();
-
-
 // code required to import the `keys.js` file and stored in a variable.
 var keys = require("./keys.js");
-var fs = require('fs');
-var request = require('request');
+//npm package
+var fs = require("fs");
+var Twitter = require("twitter");
+var Spotify = require("node-spotify-api");
+var request = require("request");
 // command variables
 var action = process.argv[2];
 // name of song or movie
@@ -14,33 +13,36 @@ var value = process.argv[3];
 // The switch-case will direct which function gets run.
 // switch case for whatever command the user enters
 switch(action){
-    case 'my-tweets':
-        twitter();
+    case "my-tweets":
+        getTweets();
     break;
 
-    case 'spotify-this-song':
-        spotify();
+    case "spotify-this-song":
+        getSong();
     break;
 
-    case 'movie-this':
-        movie();
+    case "movie-this":
+        getMovie();
     break;
 
-    case 'do-what-it-says':
+    case "do-what-it-says":
         doit();
     break;
 
     default:
+    console.log("\nHouston we have a problem!" + "\n"+
+                "\nPlease enter a command after <node liri.js>: " + "\n" +
+                "my-tweets " + "\n" +
+                "spotify-this-song 'music info' " + "\n" + 
+                "movie-this" + "\n" +
+                "do-what-it-says\n");
     break;
 }
 
 // Twitter function
-// show the last 20 tweets and when they were created at in your terminal/bash window.
-function twitter(){
+function getTweets(){
     // twitter keys variable, referencing the keys file and export line
-    var twitterKeys = require('./keys.js').twitterKeys;
-    // npm package
-    var Twitter = require('twitter');
+    var twitterKeys = require("./keys.js").twitterKeys;
     // the keys
     var client = new Twitter ({
             consumer_key: twitterKeys.consumer_key,
@@ -50,67 +52,74 @@ function twitter(){
     });// end of client obj.
 
     // what to search for
-    var params = {screen_name: 'TheLyteBulb', count: 20};
-        console.log('This is params ' + params);
+    var params = {
+        screen_name: "TheLyteBulb",
+        count: 20,
+    };// end of parameters
+        // console.log("This is params " + params);
 
-    // using the npm
-    client.get('statuses/user_timeline', params, function(err, tweets, response) {
-        //if error, log it, else log the tweets
+    // params show the last 20 tweets and when they were created them in bash.
+    client.get("statuses/user_timeline", params, function(err, tweets, response) {
+        //if error, log it, else return the tweets
         if (err) {
             console.log(err);
         }
         else {
             // for loop to run through the length of my account's tweets
-            console.log("\n__________Tweet__________\n");
-            for(i=0; i< tweets.length; i++){
+            console.log("\n____________20 Tweet Newfeed____________\n");
+            for(var i = 0; i< tweets.length; i++){
+                console.log("________________________________________________\n");
                 // adds a number and dot before to show order
-                console.log((i+1) + ". " + "Tweet: " + "'" + tweets[i].text + "'" + "\n Created At: " + tweets[i].created_at);
+                var twitterLog = ((i + 1) + ". " + "Tweet: " + tweets[i].text + "\n" + "\nCreated At: " + tweets[i].created_at + "\n");
+                console.log (twitterLog);
             } // end of for loop
         } // end of else
     }); // end of client.get
-} // end of twitter()
+} // end of getTweets()
 
 //Spotify functions
-function spotify() {
-    //npm package
-    var Spotify = require('node-spotify-api');
+function getSong() {
+    console.log("\nLoading....Music\n")
+    // spotify keys variable, referencing the keys file and export line
+    var spotifyKey = require("./keys.js").spotify;
     // the keys
-    var spotify = new Spotify(keys.spotify);
+    var spotify = new Spotify({
+        id: spotifyKey.id,
+        secret: spotifyKey.secret
+    });
 
-    spotify.search({type: 'track', query: value || 'The Sign Ace of Base'}, function(err, data) {
-        if (err) {
-            console.log('Error occurred: ' + err);
-            return;
-        }
+    spotify.search({type: "track", query: value || "The Sign Ace of Base", limit: 3}, function(err, data) {
+        if (!err) {
+            for(var i = 0; i< data.tracks.items.length; i++){
+                var spotifyInfo = data.tracks.items[i];
+                //console.log(spotifyInfo);
+                // if no error, show this information from the API
+                console.log("\n_______________SPOTIFY THIS_______________\n");
+                var artist = spotifyInfo.artists[0].name;
+                console.log("Artist(s): " + artist);
+                var song = spotifyInfo.name;
+                console.log("Song name: " + song);
+                var preview = spotifyInfo.preview_url;
+                console.log("Preview Link: " + preview);
+                var album = spotifyInfo.album.name;
+                console.log("Album: " + album);
+            }// end of for loop
+        }// end of if statement
         else {
-            var spotifyInfo = data.tracks.items[0];
-            //console.log(spotifyInfo);
-            //console.log("________spotifyInfo.artists[0].name_______");
-
-            // if no error, show me the information from the API
-            console.log("\n__________SPOTIFY THIS__________\n");
-            var artist = spotifyInfo.artists[0].name;
-            console.log("Artist(s): " + artist);
-            var song = spotifyInfo.name;
-            console.log("Song name: " + song);
-            var preview = spotifyInfo.preview_url;
-            console.log("Preview Link: " + preview);
-            var album = spotifyInfo.album.name;
-            console.log("Album: " + album);
+            console.log("Spotify error!");
+            return;
         }// end of else
     });// end of spotify.search
-}// end of spotify()
+}// end of getSong()
 
 //omdb function
-function movie() {
-    //npm package
-    var request = require('request');
+function getMovie() {
     // set movie name equal to user input
     var movieName = value;
     var movieDefault = "Mr.Nobody";
     // search url variable
-    var url = 'http://www.omdbapi.com/?t=' + movieName + '&y=&plot=short&apikey=trilogy';
-    var urlDefault = 'http://www.omdbapi.com/?t=' + movieDefault + '&plot=short&apikey=trilogy';
+    var url = "http://www.omdbapi.com/?t=" + movieName + "&y=&plot=short&apikey=trilogy";
+    var urlDefault = "http://www.omdbapi.com/?t=" + movieDefault + "&plot=short&apikey=trilogy";
 
     // if the user entered a title, search that
     if (movieName != null) {
@@ -144,11 +153,11 @@ function movie() {
             };//end of if
         });//end of request
     } // end of else
-} // end of movie()
+} // end of getSong()
 
 //doit Function
 function doit() {
-    fs.readFile('random.txt', "utf8", function(error, data){
+    fs.readFile("random.txt", "utf8", function(error, data){
 
         if (error) {
             return console.log(error);
