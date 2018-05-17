@@ -94,7 +94,7 @@ function getSong() {
                 var spotifyInfo = data.tracks.items[i];
                 //console.log(spotifyInfo);
                 // if no error, show this information from the API
-                console.log("\n_______________SPOTIFY THIS_______________\n");
+                console.log("\n_______________" + [i+1] + "." + "Spotify Search_______________\n");
                 var artist = spotifyInfo.artists[0].name;
                 console.log("Artist(s): " + artist);
                 var song = spotifyInfo.name;
@@ -102,9 +102,9 @@ function getSong() {
                 var preview = spotifyInfo.preview_url;
                 console.log("Preview Link: " + preview);
                 var album = spotifyInfo.album.name;
-                console.log("Album: " + album);
+                console.log("Album: " + album + "\n");
             }// end of for loop
-        }// end of if statement
+        }// end of if
         else {
             console.log("Spotify error!");
             return;
@@ -118,23 +118,25 @@ function getMovie() {
     var movieName = value;
     var movieDefault = "Mr.Nobody";
     // search url variable
-    var url = "http://www.omdbapi.com/?t=" + movieName + "&y=&plot=short&apikey=trilogy";
-    var urlDefault = "http://www.omdbapi.com/?t=" + movieDefault + "&plot=short&apikey=trilogy";
+    var url = "http://www.omdbapi.com/?t=" + movieName + "&y=&plot=short&tomatoes=true&apikey=trilogy";
+    var urlDefault = "http://www.omdbapi.com/?t=" + movieDefault + "&plot=short&tomatoes=true&apikey=trilogy";
 
     // if the user entered a title, search that
     if (movieName != null) {
         request(url, function (error, response, body) {
             // If the request is successful
             if (!error && response.statusCode == 200) {
+                var body = JSON.parse(body);
                 // Parse the body and pull for each attribute
                 console.log("\n__________Movie Info__________\n")
-                console.log("Title: " + value);
-                console.log("Year: " + JSON.parse(body)["Year"]);
-                console.log("Rating: " + JSON.parse(body)["imdbRating"]);
-                console.log("Country of Production: " + JSON.parse(body)["Country"]);
-                console.log("Language: " + JSON.parse(body)["Language"]);
-                console.log("Plot: " + JSON.parse(body)["Plot"]);
-                console.log("Actors: " + JSON.parse(body)["Actors"]);
+                console.log("Title: " + movieName);
+                console.log("Release Year: " + body.Year);
+                console.log("IMdB Rating: " + body.imdbRating);
+                console.log("Rotten Tomatoes Rating: " + body.tomatoRating);
+                console.log("Country of Production: " + body.Country);
+                console.log("Language: " + body.Language);
+                console.log("Plot: " + body.Plot);
+                console.log("Actors: " + body.Actors);
             };//end of if
         });//end of request
 
@@ -143,13 +145,17 @@ function getMovie() {
             request(urlDefault, function (error, response, body) {
             // If the request is successful (i.e. if the response status code is 200)
             if (!error && response.statusCode == 200) {
+                var body = JSON.parse(body);
+                // Parse the body and pull for each attribute
+                console.log("\n__________Default Movie Info__________\n")
                 console.log("Title: " + movieDefault);
-                console.log("Year: " + JSON.parse(body)["Year"]);
-                console.log("Rating: " + JSON.parse(body)["imdbRating"]);
-                console.log("Country of Production: " + JSON.parse(body)["Country"]);
-                console.log("Language: " + JSON.parse(body)["Language"]);
-                console.log("Plot: " + JSON.parse(body)["Plot"]);
-                console.log("Actors: " + JSON.parse(body)["Actors"]);
+                console.log("Release Year: " + body.Year);
+                console.log("IMdB Rating: " + body.imdbRating);
+                console.log("Rotten Tomatoes Rating: " + body.tomatoRating);
+                console.log("Country of Production: " + body.Country);
+                console.log("Language: " + body.Language);
+                console.log("Plot: " + body.Plot);
+                console.log("Actors: " + body.Actors + "\n");
             };//end of if
         });//end of request
     } // end of else
