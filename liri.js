@@ -1,18 +1,30 @@
-// code required to import the `keys.js` file and stored in a variable.
+// Read and set environment variables with the dotenv package
+require("dotenv").config();
+
+// key codes stored in a variable.
 var keys = require("./keys.js");
-//npm package
+// Import the FS package for read/write.
 var fs = require("fs");
+// Import the Twitter NPM package.
 var Twitter = require("twitter");
+// Import the node-spotify-api NPM package.
 var Spotify = require("node-spotify-api");
+// Import the request npm package.
 var request = require("request");
+
+// Initialize the API client using the client's id and secret
+var spotify = new Spotify(keys.spotify);
+var client = new Twitter(keys.twitter);
+
 // command variables
 var action = process.argv[2];
-// name of song or movie
-var value = process.argv[3];
+// search parameter for spotify and omdb
+var userInput = process.argv[3];
 
 // The switch-case will direct which function gets run.
-// switch case for whatever command the user enters
+//action statement, switch statement to declare what action to execute.
 switch(action){
+
     case "my-tweets":
         getTweets();
     break;
@@ -30,47 +42,35 @@ switch(action){
     break;
 
     default:
-    console.log("\nHouston we have a problem!" + "\n"+
+    console.log("\n_______Houston we have a problem!_______" + "\n"+
                 "\nPlease enter a command after <node liri.js>: " + "\n" +
                 "my-tweets " + "\n" +
-                "spotify-this-song 'music info' " + "\n" + 
-                "movie-this" + "\n" +
+                "spotify-this-song '<song name here>'" + "\n" +
+                "movie-this '<movie name here>'" + "\n" +
                 "do-what-it-says\n");
     break;
-}
+};
 
 // Twitter function
 function getTweets(){
-    // twitter keys variable, referencing the keys file and export line
-    var twitterKeys = require("./keys.js").twitterKeys;
-    // the keys
-    var client = new Twitter ({
-            consumer_key: twitterKeys.consumer_key,
-            consumer_secret: twitterKeys.consumer_secret,
-            access_token_key: twitterKeys.access_token_key,
-            access_token_secret: twitterKeys.access_token_secret
-    });// end of client obj.
-
     // what to search for
     var params = {
         screen_name: "TheLyteBulb",
-        count: 20,
+        count: 20
     };// end of parameters
         // console.log("This is params " + params);
 
-    // params show the last 20 tweets and when they were created them in bash.
+    // get method
     client.get("statuses/user_timeline", params, function(err, tweets, response) {
         //if error, log it, else return the tweets
-        if (err) {
-            console.log(err);
-        }
-        else {
+        if (!err) {
             // for loop to run through the length of my account's tweets
-            console.log("\n____________20 Tweet Newfeed____________\n");
+            console.log("\n____________20 Tweet Newsfeed____________\n");
             for(var i = 0; i< tweets.length; i++){
                 console.log("________________________________________________\n");
                 // adds a number and dot before to show order
-                var twitterLog = ((i + 1) + ". " + "Tweet: " + tweets[i].text + "\n" + "\nCreated At: " + tweets[i].created_at + "\n");
+                var twitterLog = ((i + 1) + ". " + "Tweet: " + tweets[i].text + "\n" + 
+                                "\nCreated At: " + tweets[i].created_at + "\n");
                 console.log (twitterLog);
             } // end of for loop
         } // end of else
@@ -80,16 +80,18 @@ function getTweets(){
 //Spotify functions
 function getSong() {
     console.log("\nLoading....Music\n")
-    // spotify keys variable, referencing the keys file and export line
-    var spotifyKey = require("./keys.js").spotify;
-    // the keys
-    var spotify = new Spotify({
-        id: spotifyKey.id,
-        secret: spotifyKey.secret
-    });
-
-    spotify.search({type: "track", query: value || "The Sign Ace of Base", limit: 3}, function(err, data) {
+    var songSearch;
+    // when not text after spotify-this-song
+    if(userInput === undefined){
+        songSearch = "The Sign Ace of Base";
+    }// end of if
+    else {
+        songSearch = userInput;
+    }// end of else
+    // spotify search method
+    spotify.search({type: "track", query: songSearch || "The Sign Ace of Base", limit: 3}, function(err, data) {
         if (!err) {
+            // loop through tracks with 3 limits
             for(var i = 0; i< data.tracks.items.length; i++){
                 var spotifyInfo = data.tracks.items[i];
                 //console.log(spotifyInfo);
@@ -114,41 +116,25 @@ function getSong() {
 
 //omdb function
 function getMovie() {
-    // set movie name equal to user input
-    var movieName = value;
-    var movieDefault = "Mr.Nobody";
-    // search url variable
-    var url = "http://www.omdbapi.com/?t=" + movieName + "&y=&plot=short&tomatoes=true&apikey=trilogy";
-    var urlDefault = "http://www.omdbapi.com/?t=" + movieDefault + "&plot=short&tomatoes=true&apikey=trilogy";
 
-    // if the user entered a title, search that
-    if (movieName != null) {
+    var movieSearch;
+    if(userInput === undefined){
+        movieSearch = "Mr. Nobody";
+    }// end of if
+    else {
+        movieSearch = userInput;
+    }// end of else
+
+    // search url variable
+    var url = "http://www.omdbapi.com/?t=" + movieSearch + "&y=&plot=long&tomatoes=true&r=json&apikey=trilogy";
+
         request(url, function (error, response, body) {
             // If the request is successful
             if (!error && response.statusCode == 200) {
                 var body = JSON.parse(body);
                 // Parse the body and pull for each attribute
                 console.log("\n__________Movie Info__________\n")
-                console.log("Title: " + movieName);
-                console.log("Release Year: " + body.Year);
-                console.log("IMdB Rating: " + body.imdbRating);
-                console.log("Rotten Tomatoes Rating: " + body.tomatoRating);
-                console.log("Country of Production: " + body.Country);
-                console.log("Language: " + body.Language);
-                console.log("Plot: " + body.Plot);
-                console.log("Actors: " + body.Actors);
-            };//end of if
-        });//end of request
-
-        // if user doesn't enter a value, value will be set to Mr.Nobody
-        } else {
-            request(urlDefault, function (error, response, body) {
-            // If the request is successful (i.e. if the response status code is 200)
-            if (!error && response.statusCode == 200) {
-                var body = JSON.parse(body);
-                // Parse the body and pull for each attribute
-                console.log("\n__________Default Movie Info__________\n")
-                console.log("Title: " + movieDefault);
+                console.log("Title: " + movieSearch);
                 console.log("Release Year: " + body.Year);
                 console.log("IMdB Rating: " + body.imdbRating);
                 console.log("Rotten Tomatoes Rating: " + body.tomatoRating);
@@ -158,30 +144,20 @@ function getMovie() {
                 console.log("Actors: " + body.Actors + "\n");
             };//end of if
         });//end of request
-    } // end of else
 } // end of getSong()
 
 //doit Function
 function doit() {
+    console.log("\nPeek into random.txt\n");
     fs.readFile("random.txt", "utf8", function(error, data){
-
+        console.log("Data: " + data);
         if (error) {
             return console.log(error);
-            }
-
-        // Then split it by commas (to make it more readable)
-        var dataArr = data.split(",");
-
-        // Each command is represented. Because of the format in the txt file, remove the quotes to run these commands. 
-        if (dataArr[0] === "spotify-this-song") {
-            var songcheck = dataArr[1].slice(1, -1);
-            spotify(songcheck);
-        } else if (dataArr[0] === "my-tweets") {
-            var tweetname = dataArr[1].slice(1, -1);
-            twitter(tweetname);
-        } else if(dataArr[0] === "movie-this") {
-            var movie_name = dataArr[1].slice(1, -1);
-            movie(movie_name);
-        }//end of else if
+        }//end of if
+        else{
+            // Then split it by commas (to make it more readable)
+            dataArr = data.split(",");
+            getSong(dataArr[0],dataArr[1]);
+        }//end of else
     });//end of fs.readFile
 };//end of doit()
